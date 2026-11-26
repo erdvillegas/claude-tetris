@@ -17,6 +17,7 @@ Implementación del clásico **Tetris** en JavaScript vanilla, usando HTML5 Canv
     - [Opción 1: abrir el archivo directamente](#opción-1-abrir-el-archivo-directamente)
     - [Opción 2: servidor local (recomendado)](#opción-2-servidor-local-recomendado)
   - [Controles](#controles)
+  - [Records](#records)
   - [Cómo funciona](#cómo-funciona)
     - [1. `index.html`](#1-indexhtml)
     - [2. `style.css`](#2-stylecss)
@@ -42,6 +43,8 @@ Es una versión jugable del Tetris clásico con todas las mecánicas que esperar
 - **Sistema de puntuación** clásico de Tetris (100 / 300 / 500 / 800 multiplicado por nivel).
 - **Niveles** que aumentan cada 10 líneas y aceleran la caída.
 - **Pausa** y **Game Over** con opción de reinicio.
+- **Contador de combo**: piezas consecutivas que eliminan al menos una línea.
+- **Tabla de records local** (top 5, mejor combo y líneas máximas) guardada en `localStorage`, visible en la pantalla de inicio y en el Game Over.
 
 ---
 
@@ -88,6 +91,16 @@ Después abre `http://localhost:8000` en el navegador.
 
 ---
 
+## Records
+
+- Al cargar la página aparece una **pantalla de inicio** con la tabla de records; la partida empieza al pulsar **Jugar**.
+- Al terminar una partida se actualizan siempre el **mejor combo** y las **líneas máximas**.
+- Si la puntuación es mayor que 0 y entra en el **top 5**, se pide un nombre (máx. 12 caracteres) que se guarda con **Guardar** o con `Enter`; la nueva fila aparece resaltada.
+- El botón **Borrar records** (con confirmación) elimina todos los datos guardados.
+- Los datos se guardan en `localStorage` bajo la clave `tetris.records` con la forma `{ top: [{ name, score, lines }], bestCombo, maxLines }`. Si están corruptos o tienen otro formato, se ignoran y se empieza con una tabla vacía.
+
+---
+
 ## Cómo funciona
 
 El juego se compone de tres archivos que cooperan:
@@ -97,8 +110,9 @@ El juego se compone de tres archivos que cooperan:
 Define la estructura visual:
 
 - Un `<canvas id="board">` de **300 × 600** píxeles donde se renderiza el tablero.
-- Un panel lateral con `SCORE`, `LINES`, `LEVEL`, vista de la siguiente pieza y la lista de controles.
-- Un overlay para los estados **PAUSA** y **GAME OVER**.
+- Un panel lateral con `SCORE`, `LINES`, `LEVEL`, `COMBO`, vista de la siguiente pieza y la lista de controles.
+- Un overlay para los estados **PAUSA** y **GAME OVER** (con el formulario de nombre y la tabla de records).
+- Un overlay de **pantalla de inicio** con la tabla de records y los botones **Jugar** y **Borrar records**.
 
 ### 2. `style.css`
 
@@ -121,6 +135,8 @@ Contiene toda la lógica del juego. A grandes rasgos:
 ### Flujo del juego
 
 ```
+carga de la página → tablero vacío + pantalla de inicio (records)
+  ↓ clic en "Jugar"
 init()
   ├─ createBoard()                  → matriz vacía
   ├─ next = randomPiece()
@@ -136,7 +152,7 @@ init()
    keydown → mover / rotar / soft-drop / hard-drop / pausa
 ```
 
-Cuando una pieza recién generada ya colisiona al aparecer (`spawn`), se dispara `endGame()` y se muestra el overlay de **Game Over**.
+Cuando una pieza recién generada ya colisiona al aparecer (`spawn`), se dispara `endGame()`: se actualizan los records en `localStorage` y se muestra el overlay de **Game Over** con la tabla.
 
 ---
 
